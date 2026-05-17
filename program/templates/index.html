@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생 성적 관리 시스템</title>
+    <style>
+        /* 전체 기본 스타일 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nanum Gothic', 'Malgun Gothic', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            padding: 30px 20px;
+        }
+
+        /* 페이지 전체 최대 너비 제한 및 중앙 정렬 */
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            color: #1a237e;
+            margin-bottom: 30px;
+            letter-spacing: -0.5px;
+        }
+
+        /* 카드형 섹션 스타일 */
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 28px 32px;
+            margin-bottom: 24px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            color: #1565c0;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+
+        /* 폼 행 레이아웃 */
+        .form-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .form-row label {
+            font-size: 0.9rem;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        /* 입력칸 스타일 */
+        input[type="text"],
+        input[type="number"] {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            border-color: #1976d2;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+        }
+
+        .input-name  { width: 180px; }
+        .input-id    { width: 120px; }
+        .input-score { width: 90px; }
+
+        /* 버튼 스타일 */
+        button {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 20px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background-color: #1251a3;
+        }
+
+        /* 결과 메시지 박스 */
+        .message {
+            margin-top: 14px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: none; /* 기본은 숨김, JS에서 표시 */
+        }
+
+        .message.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #43a047;
+        }
+
+        .message.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #e53935;
+        }
+
+        /* 검색 결과 테이블 */
+        .table-wrap {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead tr {
+            background-color: #1565c0;
+            color: white;
+        }
+
+        th, td {
+            padding: 10px 14px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        tbody tr:hover {
+            filter: brightness(0.96);
+        }
+
+        /* 등급별 행 배경색 */
+        .grade-A { background-color: #e8f5e9; }
+        .grade-B { background-color: #e3f2fd; }
+        .grade-C { background-color: #fffde7; }
+        .grade-D { background-color: #fff3e0; }
+        .grade-F { background-color: #ffebee; }
+
+        /* 추가 폼 두 번째 줄 */
+        .form-row + .form-row {
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>학생 성적 관리 시스템</h1>
+
+        <!-- ===== 검색 섹션 ===== -->
+        <div class="card">
+            <h2>학생 검색</h2>
+            <div class="form-row">
+                <label for="searchName">이름</label>
+                <input
+                    type="text"
+                    id="searchName"
+                    class="input-name"
+                    placeholder="이름을 입력하세요"
+                >
+                <button onclick="searchStudent()">검색</button>
+            </div>
+
+            <!-- 검색 결과 메시지 (오류 또는 결과 없음) -->
+            <div id="searchMessage" class="message"></div>
+
+            <!-- 검색 결과 테이블 (동적으로 채워짐) -->
+            <div class="table-wrap" id="tableWrap" style="display:none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>학번</th>
+                            <th>이름</th>
+                            <th>중간고사</th>
+                            <th>기말고사</th>
+                            <th>평균</th>
+                            <th>등급</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== 추가 섹션 ===== -->
+        <div class="card">
+            <h2>학생 추가</h2>
+            <div class="form-row">
+                <label for="addId">학번</label>
+                <input type="text" id="addId" class="input-id" placeholder="예: 2021001">
+
+                <label for="addName">이름</label>
+                <input type="text" id="addName" class="input-name" placeholder="예: 홍길동">
+            </div>
+            <div class="form-row">
+                <label for="addMidterm">중간고사</label>
+                <input type="number" id="addMidterm" class="input-score" min="0" max="100" placeholder="0~100">
+
+                <label for="addFinal">기말고사</label>
+                <input type="number" id="addFinal" class="input-score" min="0" max="100" placeholder="0~100">
+
+                <button onclick="addStudent()">추가하기</button>
+            </div>
+
+            <!-- 추가 결과 메시지 -->
+            <div id="addMessage" class="message"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 메시지 박스를 표시하는 공통 함수
+         * 성공/실패에 따라 색상이 달라지므로 type을 분리해 관리함
+         */
+        function showMessage(elementId, text, isSuccess) {
+            const el = document.getElementById(elementId);
+            el.textContent = text;
+            el.className = 'message ' + (isSuccess ? 'success' : 'error');
+            el.style.display = 'block';
+        }
+
+        /**
+         * 검색 기능
+         * 이름 입력값으로 GET /search?name=... 요청을 보내고
+         * 응답 데이터를 테이블로 렌더링함
+         */
+        async function searchStudent() {
+            const name = document.getElementById('searchName').value.trim();
+
+            if (!name) {
+                showMessage('searchMessage', '이름을 입력해주세요.', false);
+                return;
+            }
+
+            // 이전 결과 초기화
+            document.getElementById('tableWrap').style.display = 'none';
+            document.getElementById('searchMessage').style.display = 'none';
+
+            try {
+                const response = await fetch('/search?name=' + encodeURIComponent(name));
+                const result = await response.json();
+
+                if (!result.success) {
+                    showMessage('searchMessage', result.message, false);
+                    return;
+                }
+
+                if (result.data.length === 0) {
+                    showMessage('searchMessage', '검색 결과가 없습니다.', false);
+                    return;
+                }
+
+                renderTable(result.data);
+
+            } catch (err) {
+                // 네트워크 오류 등 예상치 못한 문제 발생 시
+                showMessage('searchMessage', '서버 연결 오류가 발생했습니다.', false);
+            }
+        }
+
+        /**
+         * 검색 결과를 테이블로 렌더링하는 함수
+         * 등급에 따라 행 배경색이 달라지도록 CSS 클래스를 동적으로 적용함
+         */
+        function renderTable(data) {
+            const tbody = document.getElementById('resultBody');
+            tbody.innerHTML = ''; // 기존 행 모두 제거
+
+            data.forEach(function(student) {
+                const tr = document.createElement('tr');
+                tr.className = 'grade-' + student.grade; // 등급별 배경색 적용
+
+                tr.innerHTML =
+                    '<td>' + student.student_id + '</td>' +
+                    '<td>' + student.name + '</td>' +
+                    '<td>' + student.midterm + '</td>' +
+                    '<td>' + student.final + '</td>' +
+                    '<td>' + student.average + '</td>' +
+                    '<td><strong>' + student.grade + '</strong></td>';
+
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('tableWrap').style.display = 'block';
+        }
+
+        /**
+         * 학생 추가 기능
+         * 4개 입력값의 유효성을 검사한 뒤 POST /add 로 JSON 전송
+         */
+        async function addStudent() {
+            const student_id = document.getElementById('addId').value.trim();
+            const name = document.getElementById('addName').value.trim();
+            const midtermRaw = document.getElementById('addMidterm').value.trim();
+            const finalRaw = document.getElementById('addFinal').value.trim();
+
+            // 빈 입력 검사
+            if (!student_id || !name || midtermRaw === '' || finalRaw === '') {
+                showMessage('addMessage', '모든 항목을 입력해주세요.', false);
+                return;
+            }
+
+            const midterm = parseFloat(midtermRaw);
+            const final = parseFloat(finalRaw);
+
+            // 점수 범위 검사: 백엔드에서도 검사하지만 불필요한 요청을 줄이기 위해 프론트에서 먼저 확인
+            if (isNaN(midterm) || isNaN(final) || midterm < 0 || midterm > 100 || final < 0 || final > 100) {
+                showMessage('addMessage', '점수는 0~100 사이의 숫자여야 합니다.', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id, name, midterm, final })
+                });
+                const result = await response.json();
+
+                showMessage('addMessage', result.message, result.success);
+
+                // 성공 시 입력칸 초기화
+                if (result.success) {
+                    document.getElementById('addId').value = '';
+                    document.getElementById('addName').value = '';
+                    document.getElementById('addMidterm').value = '';
+                    document.getElementById('addFinal').value = '';
+                }
+
+            } catch (err) {
+                showMessage('addMessage', '서버 연결 오류가 발생했습니다.', false);
+            }
+        }
+
+        // 검색 입력칸에서 Enter 키를 누르면 검색 실행
+        document.getElementById('searchName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchStudent();
+        });
+    </script>
+</body>
+</html>
