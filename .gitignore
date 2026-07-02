@@ -1,5 +1,7 @@
 program/data/student.db
+program/data/student.xlsx
 __pycache__/
 *.pyc
 *.pyo
 .env
+.claude
